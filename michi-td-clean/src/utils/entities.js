@@ -8,14 +8,14 @@ export const GAME_CONFIG = {
 
 // Estados del juego
 export const GAME_STATES = {
-    PLAYING: 'playing',
+    CONSTRUCTION: 'construction', // Fase de construcción - colocar piedras
+    ATTACK: 'attack',            // Fase de ataque - oleada en curso
     PAUSED: 'paused',
-    GAME_OVER: 'game_over',
-    WAITING: 'waiting'
+    GAME_OVER: 'game_over'
 };
 
 export class Tower {
-    constructor(x, y, type, data) {
+    constructor(x, y, type, data, constructionPhase = 1) {
         this.x = x;
         this.y = y;
         this.type = type;
@@ -24,9 +24,16 @@ export class Tower {
         this.fireRate = data.fireRate;
         this.color = data.color;
         this.lastFireTime = 0;
+        this.constructionPhase = constructionPhase; // En qué fase de construcción fue creada
+        this.canBeUpgraded = type === 'stone'; // Solo las piedras pueden ser mejoradas
     }
     
     update(enemies, projectiles) {
+        // Las torres de piedra no atacan
+        if (this.type === 'stone') {
+            return;
+        }
+        
         const now = Date.now();
         if (now - this.lastFireTime < this.fireRate) return;
         
@@ -51,50 +58,228 @@ export class Tower {
     }
     
     draw(ctx) {
-        // Dibujar torre
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Dibujar borde
-        ctx.strokeStyle = '#2d3748';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        if (this.type === 'stone') {
+            // Dibujar torre de piedra como cuadrado
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
+            
+            // Borde más grueso para la piedra
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(this.x - 15, this.y - 15, 30, 30);
+            
+            // Añadir textura de piedra (líneas)
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.x - 10, this.y - 5);
+            ctx.lineTo(this.x + 10, this.y - 5);
+            ctx.moveTo(this.x - 5, this.y + 5);
+            ctx.lineTo(this.x + 8, this.y + 5);
+            ctx.stroke();
+        } else {
+            // Dibujar torre normal (circular)
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dibujar borde
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
     }
 }
 
 export class Enemy {
-    constructor(path, health, speed, reward) {
-        this.path = path;
-        this.pathIndex = 0;
-        this.x = path[0].x;
-        this.y = path[0].y;
+    constructor(checkpoints, health, speed, reward, towers = []) {
+        this.checkpoints = checkpoints;
+        this.currentCheckpointIndex = 0;
         this.maxHealth = health;
         this.health = health;
         this.speed = speed;
         this.reward = reward;
-        this.damage = 10;
         this.reachedEnd = false;
         this.hasMovedOnce = false;
         
-        console.log('Enemigo creado en:', this.x, this.y, 'Velocidad:', this.speed, 'Path:', this.path);
-    }
-    
-    update() {
-        if (!this.hasMovedOnce) {
-            console.log('Primera actualización del enemigo en:', this.x, this.y);
-            this.hasMovedOnce = true;
+        // Spawn delay management
+        this.spawnDelay = 0;
+        this.hasSpawned = this.spawnDelay === 0; // Only spawn immediately if no delay
+        this.spawnTime = Date.now();
+        
+        // Calcular el path completo al spawn
+        this.fullPath = this.calculateFullPath(towers);
+        this.pathIndex = 0;
+        
+        // Posición inicial
+        if (this.fullPath && this.fullPath.length > 0) {
+            this.x = this.fullPath[0].x;
+            this.y = this.fullPath[0].y;
+        } else {
+            // Fallback a la posición del primer checkpoint
+            this.x = checkpoints[0].x;
+            this.y = checkpoints[0].y;
         }
         
-        if (this.pathIndex >= this.path.length - 1) {
+
+    }
+    
+    // Calcular el path completo desde el inicio hasta el final
+    calculateFullPath(towers) {
+        const fullPath = [];
+        
+        for (let i = 0; i < this.checkpoints.length - 1; i++) {
+            const start = this.checkpoints[i];
+            const end = this.checkpoints[i + 1];
+            
+            // Usar el algoritmo A* para encontrar el camino entre checkpoints consecutivos
+            const segmentPath = this.findPathBetweenPoints(start, end, towers);
+            
+            if (!segmentPath) {
+                return null;
+            }
+            
+            // Agregar el segmento al path completo (evitando duplicar puntos)
+            if (i === 0) {
+                fullPath.push(...segmentPath);
+            } else {
+                fullPath.push(...segmentPath.slice(1)); // Omitir el primer punto para evitar duplicados
+            }
+        }
+        
+        return fullPath;
+    }
+    
+    // Algoritmo A* simplificado para enemigos
+    findPathBetweenPoints(start, end, towers) {
+        const GRID_SIZE = 40; // Tamaño de celda fijo
+        const GRID_COLS = 37;
+        const GRID_ROWS = 37;
+        
+        // Si no hay torres, usar línea recta simple
+        if (towers.length === 0) {
+            return [
+                {x: start.col * GRID_SIZE + GRID_SIZE / 2, y: start.row * GRID_SIZE + GRID_SIZE / 2},
+                {x: end.col * GRID_SIZE + GRID_SIZE / 2, y: end.row * GRID_SIZE + GRID_SIZE / 2}
+            ];
+        }
+        
+        const isCellWalkable = (row, col) => {
+            // Verificar límites del grid
+            if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLS) {
+                return false;
+            }
+            
+            // Verificar si hay una torre en esta posición
+            for (const tower of towers) {
+                const towerGridCol = Math.floor(tower.x / GRID_SIZE);
+                const towerGridRow = Math.floor(tower.y / GRID_SIZE);
+                if (towerGridRow === row && towerGridCol === col) {
+                    return false;
+                }
+            }
+            
+            return true;
+        };
+        
+        const openSet = [{row: start.row, col: start.col, g: 0, h: 0, f: 0, parent: null}];
+        const closedSet = new Set();
+        
+        const heuristic = (row1, col1, row2, col2) => {
+            return Math.abs(row1 - row2) + Math.abs(col1 - col2);
+        };
+        
+        const getNeighbors = (row, col) => {
+            return [
+                {row: row - 1, col: col}, // arriba
+                {row: row + 1, col: col}, // abajo
+                {row: row, col: col - 1}, // izquierda
+                {row: row, col: col + 1}  // derecha
+            ].filter(({row, col}) => isCellWalkable(row, col));
+        };
+        
+        while (openSet.length > 0) {
+            // Encontrar el nodo con menor f
+            openSet.sort((a, b) => a.f - b.f);
+            const current = openSet.shift();
+            
+            const currentKey = `${current.row},${current.col}`;
+            if (closedSet.has(currentKey)) continue;
+            closedSet.add(currentKey);
+            
+            // Si llegamos al destino
+            if (current.row === end.row && current.col === end.col) {
+                const path = [];
+                let node = current;
+                while (node) {
+                    path.unshift({
+                        x: node.col * GRID_SIZE + GRID_SIZE / 2,
+                        y: node.row * GRID_SIZE + GRID_SIZE / 2
+                    });
+                    node = node.parent;
+                }
+                return path;
+            }
+            
+            // Explorar vecinos
+            for (const neighbor of getNeighbors(current.row, current.col)) {
+                const neighborKey = `${neighbor.row},${neighbor.col}`;
+                if (closedSet.has(neighborKey)) continue;
+                
+                const g = current.g + 1;
+                const h = heuristic(neighbor.row, neighbor.col, end.row, end.col);
+                const f = g + h;
+                
+                const existingNode = openSet.find(node => 
+                    node.row === neighbor.row && node.col === neighbor.col
+                );
+                
+                if (!existingNode || g < existingNode.g) {
+                    const newNode = {
+                        row: neighbor.row,
+                        col: neighbor.col,
+                        g: g,
+                        h: h,
+                        f: f,
+                        parent: current
+                    };
+                    
+                    if (existingNode) {
+                        Object.assign(existingNode, newNode);
+                    } else {
+                        openSet.push(newNode);
+                    }
+                }
+            }
+        }
+        
+        return null; // No se encontró camino
+    }
+    
+    update(speedMultiplier = 1) {
+        // Check if enemy should spawn yet
+        if (!this.hasSpawned) {
+            const currentTime = Date.now();
+            if (currentTime - this.spawnTime < this.spawnDelay) {
+                return; // Don't update if not spawned yet
+            }
+            this.hasSpawned = true;
+        }
+        
+        // Verificar si tenemos un path válido
+        if (!this.fullPath || this.fullPath.length === 0) {
             this.reachedEnd = true;
             return;
         }
         
-        const target = this.path[this.pathIndex + 1];
+        if (this.pathIndex >= this.fullPath.length - 1) {
+            this.reachedEnd = true;
+            return;
+        }
+        
+        const target = this.fullPath[this.pathIndex + 1];
         if (!target) {
-            console.log('No hay target disponible, pathIndex:', this.pathIndex);
             this.reachedEnd = true;
             return;
         }
@@ -103,34 +288,42 @@ export class Enemy {
         const dy = target.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (Math.random() < 0.05) {
-            console.log('Enemigo en:', this.x.toFixed(1), this.y.toFixed(1), 
-                       'Target:', target.x, target.y, 
-                       'Distance:', distance.toFixed(1), 
-                       'PathIndex:', this.pathIndex);
-        }
-        
         if (distance < 5) {
             this.pathIndex++;
-            console.log('Avanzando al siguiente punto. PathIndex:', this.pathIndex);
-            if (this.pathIndex < this.path.length - 1) {
+            if (this.pathIndex < this.fullPath.length - 1) {
                 this.x = target.x;
                 this.y = target.y;
             } else {
                 this.reachedEnd = true;
-                console.log('Enemigo llegó al final');
             }
         } else {
-            this.x += (dx / distance) * this.speed;
-            this.y += (dy / distance) * this.speed;
+            const effectiveSpeed = this.speed * speedMultiplier;
+            const moveX = (dx / distance) * effectiveSpeed;
+            const moveY = (dy / distance) * effectiveSpeed;
+            this.x += moveX;
+            this.y += moveY;
         }
     }
     
     takeDamage(damage) {
         this.health -= damage;
     }
+
+    // Calcular daño proporcional basado en la vida restante del enemigo
+    calculateDamageToPlayer() {
+        const healthPercentage = (this.health / this.maxHealth) * 100;
+        
+        // Sistema de daño proporcional usando fórmula matemática:
+        // Divide porcentaje entre 10, redondea hacia arriba, mínimo 1
+        return Math.max(1, Math.ceil(healthPercentage / 10));
+    }
     
     draw(ctx) {
+        // Don't draw if not spawned yet
+        if (!this.hasSpawned) {
+            return;
+        }
+        
         // Dibujar enemigo
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
@@ -180,8 +373,11 @@ export class Projectile {
     }
     
     isOutOfBounds() {
-        return this.x < 0 || this.x > GAME_CONFIG.CANVAS_WIDTH || 
-               this.y < 0 || this.y > GAME_CONFIG.CANVAS_HEIGHT;
+        // Usar dimensiones del grid fijo: 37x37 celdas de 40px cada una
+        const FIXED_WIDTH = 37 * 40; // 1480px (37 columnas)
+        const FIXED_HEIGHT = 37 * 40; // 1480px (37 filas)
+        return this.x < 0 || this.x > FIXED_WIDTH || 
+               this.y < 0 || this.y > FIXED_HEIGHT;
     }
     
     draw(ctx) {

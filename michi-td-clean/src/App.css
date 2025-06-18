@@ -387,3 +387,204 @@ body {
   .hud-tower-menu { left: 60px; bottom: 12px; padding: 10px 10px 6px 10px; }
   .hud-control-icon { width: 40px; height: 40px; font-size: 1.2em; }
 }
+
+/* Barra lateral derecha */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 100vh;
+  background: #2d3748;
+  color: white;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 10;
+  overflow-y: auto;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+  align-items: center;
+}
+
+/* Estadísticas */
+.sidebar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sidebar-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.9em;
+  gap: 2px;
+}
+
+/* Secciones */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Botón toggle de torres */
+.sidebar-tower-toggle {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 1.2em;
+  width: 100%;
+}
+
+.sidebar-tower-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Menú de torres */
+.sidebar-tower-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 5px;
+  width: 100%;
+}
+
+.sidebar-tower-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  font-size: 0.7em;
+  width: 100%;
+}
+
+.sidebar-tower-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-tower-btn.selected {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-color: #fff;
+}
+
+.sidebar-tower-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Controles del juego */
+.sidebar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.sidebar-control-btn {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 1.1em;
+  width: 100%;
+}
+
+.sidebar-control-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sidebar-control-btn.pause {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  color: #333;
+}
+
+.sidebar-control-btn.reset {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+/* Responsive para la barra lateral */
+@media (max-width: 800px) {
+  .sidebar {
+    width: 80px;
+    padding: 10px 8px;
+  }
+  
+  .sidebar-stat {
+    font-size: 0.8em;
+    padding: 6px 4px;
+  }
+  
+  .sidebar-tower-toggle,
+  .sidebar-control-btn {
+    padding: 8px;
+    font-size: 1em;
+  }
+  
+  .sidebar-tower-btn {
+    font-size: 0.6em;
+    padding: 6px 3px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    width: 70px;
+    padding: 8px 6px;
+    gap: 10px;
+  }
+  
+  .sidebar-stat {
+    font-size: 0.7em;
+    padding: 5px 3px;
+  }
+  
+  .sidebar-tower-toggle,
+  .sidebar-control-btn {
+    padding: 6px;
+    font-size: 0.9em;
+  }
+  
+  .sidebar-tower-btn {
+    padding: 5px 2px;
+    font-size: 0.5em;
+  }
+}
