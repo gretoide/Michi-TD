@@ -19,16 +19,18 @@ const Game = () => {
         enemiesToSpawn: 0
     });
 
+    const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
     // Path que seguirán los enemigos
     const path = [
-        {x: 0, y: 300},
-        {x: 200, y: 300},
-        {x: 200, y: 150},
-        {x: 400, y: 150},
-        {x: 400, y: 450},
-        {x: 600, y: 450},
-        {x: 600, y: 300},
-        {x: 800, y: 300}
+        {x: 0, y: canvasSize.height * 0.2},
+        {x: canvasSize.width * 0.25, y: canvasSize.height * 0.2},
+        {x: canvasSize.width * 0.25, y: canvasSize.height * 0.5},
+        {x: canvasSize.width * 0.5, y: canvasSize.height * 0.5},
+        {x: canvasSize.width * 0.5, y: canvasSize.height * 0.8},
+        {x: canvasSize.width * 0.75, y: canvasSize.height * 0.8},
+        {x: canvasSize.width * 0.75, y: canvasSize.height * 0.4},
+        {x: canvasSize.width, y: canvasSize.height * 0.4}
     ];
 
     // Tipos de torres
@@ -151,7 +153,7 @@ const Game = () => {
     const spawnEnemies = () => {
         const enemyCount = 5 + gameState.wave * 2;
         const enemyHealth = 50 + gameState.wave * 10;
-        const enemySpeed = 1 + gameState.wave * 0.1;
+        const enemySpeed = 0.3 + gameState.wave * 0.05;
         
         console.log(`Spawning ${enemyCount} enemies`);
         
@@ -252,25 +254,24 @@ const Game = () => {
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+        ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
         
         // Dibujar cuadrícula
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 1;
         
-        for (let x = 0; x <= GAME_CONFIG.CANVAS_WIDTH; x += GAME_CONFIG.GRID_SIZE) {
+        for (let x = 0; x <= canvasSize.width; x += GAME_CONFIG.GRID_SIZE) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, GAME_CONFIG.CANVAS_HEIGHT);
+            ctx.lineTo(x, canvasSize.height);
             ctx.stroke();
         }
         
-        for (let y = 0; y <= GAME_CONFIG.CANVAS_HEIGHT; y += GAME_CONFIG.GRID_SIZE) {
+        for (let y = 0; y <= canvasSize.height; y += GAME_CONFIG.GRID_SIZE) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(GAME_CONFIG.CANVAS_WIDTH, y);
+            ctx.lineTo(canvasSize.width, y);
             ctx.stroke();
         }
         
@@ -297,22 +298,22 @@ const Game = () => {
         // Dibujar UI de juego
         if (gameState.state === GAME_STATES.GAME_OVER) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
             
             ctx.fillStyle = 'white';
             ctx.font = '48px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', GAME_CONFIG.CANVAS_WIDTH / 2, GAME_CONFIG.CANVAS_HEIGHT / 2);
+            ctx.fillText('GAME OVER', canvasSize.width / 2, canvasSize.height / 2);
         } else if (gameState.state === GAME_STATES.PAUSED) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
             
             ctx.fillStyle = 'white';
             ctx.font = '32px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('PAUSADO', GAME_CONFIG.CANVAS_WIDTH / 2, GAME_CONFIG.CANVAS_HEIGHT / 2);
+            ctx.fillText('PAUSADO', canvasSize.width / 2, canvasSize.height / 2);
         }
-    }, [gameState]);
+    }, [gameState, canvasSize]);
 
     // Game loop principal
     useEffect(() => {
@@ -331,88 +332,70 @@ const Game = () => {
         };
     }, [update, draw]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const [showTowerMenu, setShowTowerMenu] = useState(false);
+
     return (
-        <div className="game-container">
-            <div className="game-header">
-                <h1>Michi Tower Defense</h1>
-                <div className="game-stats">
-                    <div className="stat">
-                        <span className="label">Vida</span>
-                        <span>{gameState.health}</span>
-                    </div>
-                    <div className="stat">
-                        <span className="label">Oro</span>
-                        <span>{gameState.gold}</span>
-                    </div>
-                    <div className="stat">
-                        <span className="label">Oleada</span>
-                        <span>{gameState.wave}</span>
-                    </div>
+        <div className="fullscreen-game-root">
+            <canvas
+                ref={canvasRef}
+                width={canvasSize.width}
+                height={canvasSize.height}
+                onClick={handleCanvasClick}
+                className="fullscreen-canvas"
+                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1 }}
+            />
+            <div className="hud-bar">
+                <div className="hud-stats">
+                    <div className="hud-stat"><span role="img" aria-label="vida">❤️</span> {gameState.health}</div>
+                    <div className="hud-stat"><span role="img" aria-label="oro">💰</span> {gameState.gold}</div>
+                    <div className="hud-stat"><span role="img" aria-label="oleada">🌊</span> {gameState.wave}</div>
                 </div>
             </div>
-            
-            <div className="game-area">
-                <canvas
-                    ref={canvasRef}
-                    width={GAME_CONFIG.CANVAS_WIDTH}
-                    height={GAME_CONFIG.CANVAS_HEIGHT}
-                    onClick={handleCanvasClick}
-                    className="game-canvas"
-                />
-                
-                <div className="control-panel">
-                    <div>
-                        <h3>Torres</h3>
-                        <div className="tower-buttons">
-                            {['basic', 'strong', 'fast'].map(towerType => {
-                                const towerData = getTowerData(towerType);
-                                const isSelected = gameState.selectedTowerType === towerType;
-                                const canAfford = gameState.gold >= towerData.cost;
-                                
-                                return (
-                                    <button
-                                        key={towerType}
-                                        className={`tower-btn ${isSelected ? 'selected' : ''}`}
-                                        onClick={() => selectTower(towerType)}
-                                        disabled={!canAfford}
-                                    >
-                                        <div className={`tower-icon ${towerType}-tower`}>T</div>
-                                        <div className="tower-info">
-                                            <div className="tower-name">{towerData.name}</div>
-                                            <div className="tower-cost">${towerData.cost}</div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                    
-                    <div className="game-controls">
-                        <button
-                            className="control-btn"
-                            onClick={startWave}
-                            disabled={gameState.state !== GAME_STATES.WAITING}
-                        >
-                            Iniciar Oleada
-                        </button>
-                        <button
-                            className="control-btn pause"
-                            onClick={togglePause}
-                            disabled={gameState.state === GAME_STATES.WAITING || gameState.state === GAME_STATES.GAME_OVER}
-                        >
-                            {gameState.state === GAME_STATES.PAUSED ? 'Reanudar' : 'Pausar'}
-                        </button>
-                        <button
-                            className="control-btn reset"
-                            onClick={resetGame}
-                        >
-                            Reiniciar
-                        </button>
-                    </div>
+            <div className="hud-tower-fab" onClick={() => setShowTowerMenu(v => !v)}>
+                <span role="img" aria-label="torre">🏰</span>
+            </div>
+            {showTowerMenu && (
+                <div className="hud-tower-menu">
+                    {['basic', 'strong', 'fast'].map(towerType => {
+                        const towerData = getTowerData(towerType);
+                        const isSelected = gameState.selectedTowerType === towerType;
+                        const canAfford = gameState.gold >= towerData.cost;
+                        let emoji = '🟢';
+                        if (towerType === 'strong') emoji = '🔴';
+                        if (towerType === 'fast') emoji = '🔵';
+                        return (
+                            <button
+                                key={towerType}
+                                className={`hud-tower-btn ${isSelected ? 'selected' : ''}`}
+                                onClick={() => { selectTower(towerType); setShowTowerMenu(false); }}
+                                disabled={!canAfford}
+                            >
+                                <div className={`tower-icon ${towerType}-tower`}>{emoji}</div>
+                                <div className="tower-info">
+                                    <div className="tower-name">{towerData.name}</div>
+                                    <div className="tower-cost">${towerData.cost}</div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
+            )}
+            <div className="hud-controls-fab">
+                <button className="hud-control-icon" onClick={startWave} disabled={gameState.state !== GAME_STATES.WAITING} title="Iniciar Oleada">▶️</button>
+                <button className="hud-control-icon" onClick={togglePause} disabled={gameState.state === GAME_STATES.WAITING || gameState.state === GAME_STATES.GAME_OVER} title="Pausar/Reanudar">⏸️</button>
+                <button className="hud-control-icon" onClick={resetGame} title="Reiniciar">🔄</button>
             </div>
         </div>
     );
 };
 
 export default Game;
+

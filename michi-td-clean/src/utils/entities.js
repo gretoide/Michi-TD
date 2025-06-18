@@ -187,7 +187,7 @@ export class Projectile {
     draw(ctx) {
         ctx.fillStyle = '#fbbf24';
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, 7, 0, Math.PI * 2);
         ctx.fill();
     }
 } 

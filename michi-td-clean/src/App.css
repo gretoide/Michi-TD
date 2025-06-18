@@ -236,3 +236,154 @@ body {
         gap: 15px;
     }
 }
+
+.fullscreen-game-root {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.fullscreen-canvas {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 1;
+  background: #181c2f;
+}
+
+.hud-bar {
+  position: fixed;
+  top: 0; left: 0; width: 100vw;
+  height: 64px;
+  background: rgba(30, 41, 59, 0.85);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 40px;
+  z-index: 10;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+  font-size: 1.2em;
+}
+.hud-stats {
+  display: flex;
+  gap: 32px;
+}
+.hud-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2em;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+.hud-tower-fab {
+  position: fixed;
+  left: 32px;
+  bottom: 32px;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2em;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  cursor: pointer;
+  z-index: 20;
+  transition: background 0.2s;
+}
+.hud-tower-fab:hover {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.hud-tower-menu {
+  position: fixed;
+  left: 112px;
+  bottom: 32px;
+  background: rgba(30, 41, 59, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+  padding: 18px 18px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 30;
+}
+.hud-controls-fab {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  z-index: 20;
+}
+.hud-control-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: #fff;
+  font-size: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.hud-control-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hud-control-icon:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  transform: scale(1.08);
+}
+.hud-tower-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(40, 50, 70, 0.92);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-size: 1.1em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+.hud-tower-btn.selected {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #fff;
+  transform: scale(1.05);
+}
+.hud-tower-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tower-info .tower-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #fff;
+}
+.tower-info .tower-cost {
+  font-size: 0.95em;
+  color: #e0e0e0;
+}
+@media (max-width: 900px) {
+  .hud-bar { font-size: 1em; padding: 0 10px; }
+  .hud-tower-fab, .hud-controls-fab { width: 48px; height: 48px; }
+  .hud-tower-menu { left: 80px; }
+}
+@media (max-width: 600px) {
+  .hud-bar { height: 48px; font-size: 0.9em; }
+  .hud-tower-fab, .hud-controls-fab { left: 12px; right: 12px; bottom: 12px; width: 40px; height: 40px; font-size: 1.2em; }
+  .hud-tower-menu { left: 60px; bottom: 12px; padding: 10px 10px 6px 10px; }
+  .hud-control-icon { width: 40px; height: 40px; font-size: 1.2em; }
+}
