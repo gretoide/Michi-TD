@@ -992,6 +992,10 @@ const Game = () => {
                         <span role="img" aria-label="oleada">🌊</span>
                         <span>{gameState.wave}</span>
                     </div>
+                    <div className="sidebar-stat" title={`Enemigos en mapa: ${gameState.enemies.length}`}>
+                        <span role="img" aria-label="enemigos">👹</span>
+                        <span>{gameState.enemies.length}</span>
+                    </div>
                 </div>
 
                 {/* Botón de piedras */}
