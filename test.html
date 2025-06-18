@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Michi-TD</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #333;
+            background: white;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .tower-btn.selected {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        #info {
+            text-align: center;
+            margin: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Michi-TD - Test</h1>
+    
+    <div id="info">
+        Vida: <span id="health">100</span> | 
+        Oro: <span id="gold">500</span> | 
+        Oleada: <span id="wave">1</span>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <h3>Torres:</h3>
+        <button class="tower-btn" data-tower="basic">Básica (50g)</button>
+        <button class="tower-btn" data-tower="strong">Fuerte (100g)</button>
+        <button class="tower-btn" data-tower="fast">Rápida (75g)</button>
+        <br><br>
+        <button id="startWave">Iniciar Oleada</button>
+        <button id="pauseGame">Pausar</button>
+        <button id="resetGame">Reiniciar</button>
+    </div>
+    
+    <div style="text-align: center; margin: 20px;">
+        <h4>Instrucciones:</h4>
+        <p>1. Selecciona una torre haciendo clic en los botones de arriba</p>
+        <p>2. Haz clic en el canvas para colocar la torre</p>
+        <p>3. Presiona "Iniciar Oleada" para empezar</p>
+        <p>4. Abre la consola del navegador (F12) para ver mensajes de debug</p>
+    </div>
+    
+    <script src="entities.js"></script>
+    <script src="game.js"></script>
+</body>
+</html> 
