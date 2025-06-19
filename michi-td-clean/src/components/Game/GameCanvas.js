@@ -1,5 +1,5 @@
-cdimport React, { useRef, useEffect, useState, useCallback } from 'react';
-import { GAME_CONFIG, GAME_STATES, Tower, Enemy, Projectile } from '../../entities/entities';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { GAME_STATES, Tower, Enemy } from '../../entities/entities';
 
 const Game = () => {
     const canvasRef = useRef(null);
@@ -745,6 +745,7 @@ const Game = () => {
     }, []);
 
     // Función crítica para modificar salud con protección de semáforo
+    // eslint-disable-next-line no-unused-vars
     const modifyPlayerHealth = useCallback(async (damageAmount, source) => {
         // 🚦 P(semaphore) - Adquirir recurso
         await acquireHealthSemaphore();
@@ -755,6 +756,7 @@ const Game = () => {
                 setGameState(prev => {
                     const oldHealth = prev.health;
                     const newHealth = Math.max(0, prev.health - damageAmount);
+                    // eslint-disable-next-line no-unused-vars
                     const actualDamage = oldHealth - newHealth;
                     
                     // console.log(`💥 ${source}: ${actualDamage} damage applied. Health: ${oldHealth} -> ${newHealth}`);
@@ -793,6 +795,7 @@ const Game = () => {
             // 🔒 SECCIÓN CRÍTICA - Aplicar todo el daño de una vez
             return new Promise((resolve) => {
                 setGameState(prev => {
+                    // eslint-disable-next-line no-unused-vars
                     const initialHealth = prev.health;
                     const totalDamage = damageOperations.reduce((sum, op) => sum + op.amount, 0);
                     const newHealth = Math.max(0, prev.health - totalDamage);
