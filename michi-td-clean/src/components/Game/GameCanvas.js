@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+cdimport React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GAME_CONFIG, GAME_STATES, Tower, Enemy, Projectile } from '../../entities/entities';
 
 const Game = () => {
@@ -448,7 +448,7 @@ const Game = () => {
         
         // Verificar límite de 5 piedras por fase
         if (gameState.stonesPlacedThisPhase >= 5) {
-            console.log('Máximo de 5 piedras por fase de construcción');
+            // console.log('Máximo de 5 piedras por fase de construcción');
             return;
         }
         
@@ -720,12 +720,12 @@ const Game = () => {
             if (healthSemaphore.current.count > 0) {
                 // Recurso disponible - adquirir inmediatamente
                 healthSemaphore.current.count--;
-                console.log('🟢 Health semaphore ACQUIRED (immediate)');
+                // console.log('🟢 Health semaphore ACQUIRED (immediate)');
                 resolve();
             } else {
                 // Recurso ocupado - agregar a cola de espera
                 healthSemaphore.current.waitingQueue.push(resolve);
-                console.log(`🟡 Health semaphore QUEUED (waiting: ${healthSemaphore.current.waitingQueue.length})`);
+                // console.log(`🟡 Health semaphore QUEUED (waiting: ${healthSemaphore.current.waitingQueue.length})`);
             }
         });
     }, []);
@@ -735,12 +735,12 @@ const Game = () => {
         if (healthSemaphore.current.waitingQueue.length > 0) {
             // Hay procesos esperando - despertar el siguiente
             const nextResolve = healthSemaphore.current.waitingQueue.shift();
-            console.log(`🟠 Health semaphore TRANSFERRED (remaining: ${healthSemaphore.current.waitingQueue.length})`);
+            // console.log(`🟠 Health semaphore TRANSFERRED (remaining: ${healthSemaphore.current.waitingQueue.length})`);
             nextResolve();
         } else {
             // No hay procesos esperando - liberar recurso
             healthSemaphore.current.count++;
-            console.log('🔴 Health semaphore RELEASED');
+            // console.log('🔴 Health semaphore RELEASED');
         }
     }, []);
 
@@ -757,7 +757,7 @@ const Game = () => {
                     const newHealth = Math.max(0, prev.health - damageAmount);
                     const actualDamage = oldHealth - newHealth;
                     
-                    console.log(`💥 ${source}: ${actualDamage} damage applied. Health: ${oldHealth} -> ${newHealth}`);
+                    // console.log(`💥 ${source}: ${actualDamage} damage applied. Health: ${oldHealth} -> ${newHealth}`);
                     
                     const newState = {
                         ...prev,
@@ -797,13 +797,13 @@ const Game = () => {
                     const totalDamage = damageOperations.reduce((sum, op) => sum + op.amount, 0);
                     const newHealth = Math.max(0, prev.health - totalDamage);
                     
-                    console.log(`💥💥 BATCH DAMAGE: ${damageOperations.length} enemies, ${totalDamage} total damage`);
-                    console.log(`    Health: ${initialHealth} -> ${newHealth}`);
+                    // console.log(`💥💥 BATCH DAMAGE: ${damageOperations.length} enemies, ${totalDamage} total damage`);
+                    // console.log(`    Health: ${initialHealth} -> ${newHealth}`);
                     
                     // Log individual damages
-                    damageOperations.forEach(op => {
-                        console.log(`    - ${op.source}: ${op.amount} damage`);
-                    });
+                    // damageOperations.forEach(op => {
+                    //     console.log(`    - ${op.source}: ${op.amount} damage`);
+                    // });
                     
                     const newState = {
                         ...prev,

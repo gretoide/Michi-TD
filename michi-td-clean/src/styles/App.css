@@ -152,6 +152,11 @@ body {
     background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
 }
 
+.stone-tower {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    color: #fff;
+}
+
 .tower-info {
     display: flex;
     flex-direction: column;
@@ -165,6 +170,12 @@ body {
 .tower-cost {
     font-size: 0.8em;
     opacity: 0.9;
+}
+
+.stone-counter {
+    font-size: 0.7em;
+    font-weight: bold;
+    opacity: 0.8;
 }
 
 .game-controls {
