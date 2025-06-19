@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { GAME_CONFIG, GAME_STATES, Tower, Enemy, Projectile } from '../utils/entities';
+import { GAME_CONFIG, GAME_STATES, Tower, Enemy, Projectile } from '../../entities/entities';
 
 const Game = () => {
     const canvasRef = useRef(null);
