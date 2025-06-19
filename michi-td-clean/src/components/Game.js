@@ -60,23 +60,23 @@ const Game = () => {
     };
 
     // Función auxiliar para convertir número a letra estilo Excel
-    const numberToLetter = (num) => {
+    const numberToLetter = useCallback((num) => {
         let result = '';
         while (num >= 0) {
             result = String.fromCharCode(65 + (num % 26)) + result;
             num = Math.floor(num / 26) - 1;
         }
         return result;
-    };
+    }, []);
 
     // Función auxiliar para convertir letra a número
-    const letterToNumber = (letter) => {
+    const letterToNumber = useCallback((letter) => {
         let result = 0;
         for (let i = 0; i < letter.length; i++) {
             result = result * 26 + (letter.charCodeAt(i) - 64);
         }
         return result - 1; // Ajustar para base 0
-    };
+    }, []);
 
     // Checkpoints que seguirán los enemigos (nuevo sistema basado en celdas numeradas)
     const checkpoints = [
@@ -106,9 +106,6 @@ const Game = () => {
         }
 
         // Verificar si hay una torre en esta posición
-        const cellCenterX = col * FIXED_GRID.CELL_SIZE + FIXED_GRID.CELL_SIZE / 2;
-        const cellCenterY = row * FIXED_GRID.CELL_SIZE + FIXED_GRID.CELL_SIZE / 2;
-        
         for (const tower of towers) {
             const towerGridCol = Math.floor(tower.x / FIXED_GRID.CELL_SIZE);
             const towerGridRow = Math.floor(tower.y / FIXED_GRID.CELL_SIZE);
@@ -211,7 +208,10 @@ const Game = () => {
     };
 
     // Función para dibujar celdas especiales
-    const drawSpecialCells = (ctx) => {
+    const drawSpecialCells = useCallback((ctx) => {
+        const currentCamera = cameraRef.current;
+        const currentCanvasSize = canvasSizeRef.current;
+        
         // Definir las celdas especiales
         const grayCells = [
             // Área superior izquierda: del 1 al 10, y de la A a la G (filas 0-6, cols 0-9)
@@ -241,16 +241,19 @@ const Game = () => {
             const y = cell.row * FIXED_GRID.CELL_SIZE;
             
             // Solo dibujar si está visible
-            if (x + FIXED_GRID.CELL_SIZE >= camera.x && x <= camera.x + canvasSize.width &&
-                y + FIXED_GRID.CELL_SIZE >= camera.y && y <= camera.y + canvasSize.height) {
+            if (x + FIXED_GRID.CELL_SIZE >= currentCamera.x && x <= currentCamera.x + currentCanvasSize.width &&
+                y + FIXED_GRID.CELL_SIZE >= currentCamera.y && y <= currentCamera.y + currentCanvasSize.height) {
                 ctx.fillStyle = cell.color;
                 ctx.fillRect(x, y, FIXED_GRID.CELL_SIZE, FIXED_GRID.CELL_SIZE);
             }
         });
-    };
+    }, [FIXED_GRID.CELL_SIZE, letterToNumber]);
 
     // Función para dibujar números en celdas específicas
-    const drawCellNumbers = (ctx) => {
+    const drawCellNumbers = useCallback((ctx) => {
+        const currentCamera = cameraRef.current;
+        const currentCanvasSize = canvasSizeRef.current;
+        
         // Definir las celdas con números
         const numberedCells = [
             {row: letterToNumber('E'), col: 18, number: '4'}, // E19
@@ -272,8 +275,8 @@ const Game = () => {
             const y = cell.row * FIXED_GRID.CELL_SIZE;
             
             // Solo dibujar si está visible
-            if (x + FIXED_GRID.CELL_SIZE >= camera.x && x <= camera.x + canvasSize.width &&
-                y + FIXED_GRID.CELL_SIZE >= camera.y && y <= camera.y + canvasSize.height) {
+            if (x + FIXED_GRID.CELL_SIZE >= currentCamera.x && x <= currentCamera.x + currentCanvasSize.width &&
+                y + FIXED_GRID.CELL_SIZE >= currentCamera.y && y <= currentCamera.y + currentCanvasSize.height) {
                 
                 const centerX = x + FIXED_GRID.CELL_SIZE / 2;
                 const centerY = y + FIXED_GRID.CELL_SIZE / 2;
@@ -281,7 +284,7 @@ const Game = () => {
                 ctx.fillText(cell.number, centerX, centerY);
             }
         });
-    };
+    }, [FIXED_GRID.CELL_SIZE, letterToNumber]);
 
     // Función para convertir coordenadas de píxeles a nomenclatura del grid
     const getGridCoordinates = useCallback((x, y) => {
@@ -302,41 +305,44 @@ const Game = () => {
         const letter = numberToLetter(gridY);
         
         return `${letter}${number}`;
-    }, [camera]);
+    }, [camera, FIXED_GRID.CELL_SIZE, FIXED_GRID.COLS, FIXED_GRID.ROWS, numberToLetter]);
 
     // Función para dibujar las etiquetas del grid
-    const drawGridLabels = (ctx) => {
+    const drawGridLabels = useCallback((ctx) => {
+        const currentCamera = cameraRef.current;
+        const currentCanvasSize = canvasSizeRef.current;
+        
         ctx.fillStyle = '#666';
         ctx.font = '12px Arial';
         
         // Calcular qué parte del grid fijo está visible
-        const startCol = Math.max(0, Math.floor(camera.x / FIXED_GRID.CELL_SIZE));
-        const endCol = Math.min(FIXED_GRID.COLS, Math.ceil((camera.x + canvasSize.width) / FIXED_GRID.CELL_SIZE));
-        const startRow = Math.max(0, Math.floor(camera.y / FIXED_GRID.CELL_SIZE));
-        const endRow = Math.min(FIXED_GRID.ROWS, Math.ceil((camera.y + canvasSize.height) / FIXED_GRID.CELL_SIZE));
+        const startCol = Math.max(0, Math.floor(currentCamera.x / FIXED_GRID.CELL_SIZE));
+        const endCol = Math.min(FIXED_GRID.COLS, Math.ceil((currentCamera.x + currentCanvasSize.width) / FIXED_GRID.CELL_SIZE));
+        const startRow = Math.max(0, Math.floor(currentCamera.y / FIXED_GRID.CELL_SIZE));
+        const endRow = Math.min(FIXED_GRID.ROWS, Math.ceil((currentCamera.y + currentCanvasSize.height) / FIXED_GRID.CELL_SIZE));
         
         // Dibujar números en la parte inferior (1, 2, 3, ...)
         ctx.textAlign = 'center';
         for (let col = startCol; col < endCol; col++) {
-            const x = col * FIXED_GRID.CELL_SIZE - camera.x;
+            const x = col * FIXED_GRID.CELL_SIZE - currentCamera.x;
             const number = col + 1;
             
-            if (x >= -FIXED_GRID.CELL_SIZE && x <= canvasSize.width) {
-                ctx.fillText(number.toString(), x + FIXED_GRID.CELL_SIZE / 2, canvasSize.height - 5);
+            if (x >= -FIXED_GRID.CELL_SIZE && x <= currentCanvasSize.width) {
+                ctx.fillText(number.toString(), x + FIXED_GRID.CELL_SIZE / 2, currentCanvasSize.height - 5);
             }
         }
         
         // Dibujar letras en el lado izquierdo (A, B, C... Z, AA, AB, AC...)
         ctx.textAlign = 'left';
         for (let row = startRow; row < endRow; row++) {
-            const y = row * FIXED_GRID.CELL_SIZE - camera.y;
+            const y = row * FIXED_GRID.CELL_SIZE - currentCamera.y;
             const letter = numberToLetter(row);
             
-            if (y >= -FIXED_GRID.CELL_SIZE && y <= canvasSize.height) {
+            if (y >= -FIXED_GRID.CELL_SIZE && y <= currentCanvasSize.height) {
                 ctx.fillText(letter, 5, y + FIXED_GRID.CELL_SIZE / 2 + 4);
             }
         }
-    };
+    }, [FIXED_GRID.CELL_SIZE, FIXED_GRID.COLS, FIXED_GRID.ROWS, numberToLetter]);
 
     // Activar/desactivar modo colocación de piedras
     const toggleStonePlacement = () => {
@@ -350,49 +356,8 @@ const Game = () => {
         });
     };
 
-    // Verificar si se puede colocar torre
-    const canPlaceTower = useCallback((worldX, worldY) => {
-        // Verificar si está dentro del grid fijo
-        const gridX = Math.floor(worldX / FIXED_GRID.CELL_SIZE);
-        const gridY = Math.floor(worldY / FIXED_GRID.CELL_SIZE);
-        
-        if (gridX < 0 || gridX >= FIXED_GRID.COLS || gridY < 0 || gridY >= FIXED_GRID.ROWS) {
-            return false;
-        }
-        
-        // Verificar si no hay otra torre en la posición
-        for (let tower of gameState.towers) {
-            if (Math.abs(tower.x - worldX) < FIXED_GRID.CELL_SIZE && 
-                Math.abs(tower.y - worldY) < FIXED_GRID.CELL_SIZE) {
-                return false;
-            }
-        }
-        
-        // Verificar si no está en el camino
-        if (isOnPath(worldX, worldY)) {
-            return false;
-        }
-        
-        return true;
-    }, [gameState.towers]);
-
-    // Determinar el estilo del cursor basado en el estado actual
-    const getCursorStyle = useCallback(() => {
-        if (isPanning) return 'grabbing';
-        if (!gameState.isPlacingStones) return 'crosshair';
-        
-        // En modo colocación de piedras, verificar si la posición actual es válida
-        const worldX = cursorPosition.x + camera.x;
-        const worldY = cursorPosition.y + camera.y;
-        
-        if (canPlaceTower(worldX, worldY)) {
-            return 'copy'; // Cursor gris para colocación válida
-        } else {
-            return 'not-allowed'; // Cursor rojo para zona inválida
-        }
-    }, [isPanning, gameState.isPlacingStones, cursorPosition.x, cursorPosition.y, camera.x, camera.y, canPlaceTower]);
-
-    const isOnPath = (x, y) => {
+    // Función para verificar si una posición está en el camino
+    const isOnPath = useCallback((x, y) => {
         // Convertir coordenadas del mundo a coordenadas de grid
         const gridCol = Math.floor(x / FIXED_GRID.CELL_SIZE);
         const gridRow = Math.floor(y / FIXED_GRID.CELL_SIZE);
@@ -428,38 +393,51 @@ const Game = () => {
         }
         
         return false; // Permitir torres en todas las demás celdas
-    };
+    }, [FIXED_GRID.CELL_SIZE, FIXED_GRID.COLS, FIXED_GRID.ROWS, letterToNumber]);
 
-    const isPointOnLine = (px, py, p1, p2, tolerance) => {
-        const A = px - p1.x;
-        const B = py - p1.y;
-        const C = p2.x - p1.x;
-        const D = p2.y - p1.y;
+    // Verificar si se puede colocar torre
+    const canPlaceTower = useCallback((worldX, worldY) => {
+        // Verificar si está dentro del grid fijo
+        const gridX = Math.floor(worldX / FIXED_GRID.CELL_SIZE);
+        const gridY = Math.floor(worldY / FIXED_GRID.CELL_SIZE);
         
-        const dot = A * C + B * D;
-        const lenSq = C * C + D * D;
-        
-        if (lenSq === 0) return Math.sqrt(A * A + B * B) <= tolerance;
-        
-        const param = dot / lenSq;
-        
-        let xx, yy;
-        if (param < 0) {
-            xx = p1.x;
-            yy = p1.y;
-        } else if (param > 1) {
-            xx = p2.x;
-            yy = p2.y;
-        } else {
-            xx = p1.x + param * C;
-            yy = p1.y + param * D;
+        if (gridX < 0 || gridX >= FIXED_GRID.COLS || gridY < 0 || gridY >= FIXED_GRID.ROWS) {
+            return false;
         }
         
-        const dx = px - xx;
-        const dy = py - yy;
+        // Verificar si no hay otra torre en la posición
+        for (let tower of gameState.towers) {
+            if (Math.abs(tower.x - worldX) < FIXED_GRID.CELL_SIZE && 
+                Math.abs(tower.y - worldY) < FIXED_GRID.CELL_SIZE) {
+                return false;
+            }
+        }
         
-        return Math.sqrt(dx * dx + dy * dy) <= tolerance;
-    };
+        // Verificar si no está en el camino
+        if (isOnPath(worldX, worldY)) {
+            return false;
+        }
+        
+        return true;
+    }, [gameState.towers, FIXED_GRID.CELL_SIZE, FIXED_GRID.COLS, FIXED_GRID.ROWS, isOnPath]);
+
+    // Determinar el estilo del cursor basado en el estado actual
+    const getCursorStyle = useCallback(() => {
+        if (isPanning) return 'grabbing';
+        if (!gameState.isPlacingStones) return 'crosshair';
+        
+        // En modo colocación de piedras, verificar si la posición actual es válida
+        const worldX = cursorPosition.x + camera.x;
+        const worldY = cursorPosition.y + camera.y;
+        
+        if (canPlaceTower(worldX, worldY)) {
+            return 'copy'; // Cursor gris para colocación válida
+        } else {
+            return 'not-allowed'; // Cursor rojo para zona inválida
+        }
+    }, [isPanning, gameState.isPlacingStones, cursorPosition.x, cursorPosition.y, camera.x, camera.y, canPlaceTower]);
+
+    // Removed unused isPointOnLine function
 
     // Colocar torre (solo piedras en fase de construcción)
     const placeTower = (worldX, worldY, type) => {
@@ -664,7 +642,7 @@ const Game = () => {
             const coordinates = getGridCoordinates(canvasX, canvasY);
             canvas.title = `Casilla: ${coordinates}`;
         }
-    }, [isPanning, lastPanPosition, canvasSize, getGridCoordinates]);
+    }, [isPanning, lastPanPosition, canvasSize, getGridCoordinates, FIXED_GRID.TOTAL_WIDTH, FIXED_GRID.TOTAL_HEIGHT]);
 
     // Actualizar el estilo del cursor cuando cambien las dependencias relevantes
     useEffect(() => {
@@ -729,6 +707,127 @@ const Game = () => {
         });
     };
 
+    // 🚦 SEMÁFORO PARA CONTROL DE CONCURRENCIA DE SALUD
+    const healthSemaphore = useRef({
+        count: 1,           // Semáforo binario (1 = disponible, 0 = ocupado)
+        waitingQueue: [],   // Cola de operaciones esperando
+        isProcessing: false // Flag para evitar procesamiento múltiple
+    });
+
+    // Función para adquirir semáforo (P operation)
+    const acquireHealthSemaphore = useCallback(() => {
+        return new Promise((resolve) => {
+            if (healthSemaphore.current.count > 0) {
+                // Recurso disponible - adquirir inmediatamente
+                healthSemaphore.current.count--;
+                console.log('🟢 Health semaphore ACQUIRED (immediate)');
+                resolve();
+            } else {
+                // Recurso ocupado - agregar a cola de espera
+                healthSemaphore.current.waitingQueue.push(resolve);
+                console.log(`🟡 Health semaphore QUEUED (waiting: ${healthSemaphore.current.waitingQueue.length})`);
+            }
+        });
+    }, []);
+
+    // Función para liberar semáforo (V operation)
+    const releaseHealthSemaphore = useCallback(() => {
+        if (healthSemaphore.current.waitingQueue.length > 0) {
+            // Hay procesos esperando - despertar el siguiente
+            const nextResolve = healthSemaphore.current.waitingQueue.shift();
+            console.log(`🟠 Health semaphore TRANSFERRED (remaining: ${healthSemaphore.current.waitingQueue.length})`);
+            nextResolve();
+        } else {
+            // No hay procesos esperando - liberar recurso
+            healthSemaphore.current.count++;
+            console.log('🔴 Health semaphore RELEASED');
+        }
+    }, []);
+
+    // Función crítica para modificar salud con protección de semáforo
+    const modifyPlayerHealth = useCallback(async (damageAmount, source) => {
+        // 🚦 P(semaphore) - Adquirir recurso
+        await acquireHealthSemaphore();
+        
+        try {
+            // 🔒 SECCIÓN CRÍTICA - Modificar salud del jugador
+            return new Promise((resolve) => {
+                setGameState(prev => {
+                    const oldHealth = prev.health;
+                    const newHealth = Math.max(0, prev.health - damageAmount);
+                    const actualDamage = oldHealth - newHealth;
+                    
+                    console.log(`💥 ${source}: ${actualDamage} damage applied. Health: ${oldHealth} -> ${newHealth}`);
+                    
+                    const newState = {
+                        ...prev,
+                        health: newHealth
+                    };
+                    
+                    // Verificar Game Over
+                    if (newHealth <= 0) {
+                        newState.state = GAME_STATES.GAME_OVER;
+                        console.log('💀 Game Over! Health reached 0');
+                    }
+                    
+                    resolve(newState);
+                    return newState;
+                });
+            });
+        } finally {
+            // 🚦 V(semaphore) - Liberar recurso
+            setTimeout(() => {
+                releaseHealthSemaphore();
+            }, 0);
+        }
+    }, [acquireHealthSemaphore, releaseHealthSemaphore]);
+
+    // Procesador de lote para múltiples operaciones de daño
+    const processBatchDamage = useCallback(async (damageOperations) => {
+        if (damageOperations.length === 0) return;
+        
+        // 🚦 P(semaphore) - Adquirir recurso para operación de lote
+        await acquireHealthSemaphore();
+        
+        try {
+            // 🔒 SECCIÓN CRÍTICA - Aplicar todo el daño de una vez
+            return new Promise((resolve) => {
+                setGameState(prev => {
+                    const initialHealth = prev.health;
+                    const totalDamage = damageOperations.reduce((sum, op) => sum + op.amount, 0);
+                    const newHealth = Math.max(0, prev.health - totalDamage);
+                    
+                    console.log(`💥💥 BATCH DAMAGE: ${damageOperations.length} enemies, ${totalDamage} total damage`);
+                    console.log(`    Health: ${initialHealth} -> ${newHealth}`);
+                    
+                    // Log individual damages
+                    damageOperations.forEach(op => {
+                        console.log(`    - ${op.source}: ${op.amount} damage`);
+                    });
+                    
+                    const newState = {
+                        ...prev,
+                        health: newHealth
+                    };
+                    
+                    // Verificar Game Over
+                    if (newHealth <= 0) {
+                        newState.state = GAME_STATES.GAME_OVER;
+                        console.log('💀 Game Over! Health reached 0');
+                    }
+                    
+                    resolve(newState);
+                    return newState;
+                });
+            });
+        } finally {
+            // 🚦 V(semaphore) - Liberar recurso
+            setTimeout(() => {
+                releaseHealthSemaphore();
+            }, 0);
+        }
+    }, [acquireHealthSemaphore, releaseHealthSemaphore]);
+
     // Game loop
     const update = useCallback(() => {
         setGameState(prev => {
@@ -738,29 +837,36 @@ const Game = () => {
 
             const newState = { ...prev };
             
-            // Actualizar enemigos
-            for (let i = newState.enemies.length - 1; i >= 0; i--) {
-                const enemy = newState.enemies[i];
+            // 🚦 ACTUALIZAR ENEMIGOS CON SEMÁFORO PARA DAÑO
+            const enemiesToRemove = [];
+            const damageOperations = []; // Acumular operaciones de daño
+            
+            // Fase 1: Actualizar enemigos y recopilar daños
+            newState.enemies.forEach((enemy, index) => {
                 enemy.update(newState.speedMultiplier);
                 
                 if (enemy.reachedEnd) {
                     const damageToPlayer = enemy.calculateDamageToPlayer();
-                    const oldHealth = newState.health;
-                    newState.health = Math.max(0, newState.health - damageToPlayer);
-                    console.log(`Enemy reached end! Dealing ${damageToPlayer} damage to player. Health: ${oldHealth} -> ${newState.health}`);
-                    console.log(`New state health after damage: ${newState.health}`);
-                    newState.enemies.splice(i, 1);
-                    
-                    if (newState.health <= 0) {
-                        newState.health = 0;
-                        newState.state = GAME_STATES.GAME_OVER;
-                        console.log('Game Over! Health reached 0');
-                    }
+                    damageOperations.push({
+                        amount: damageToPlayer,
+                        source: `Enemy ${enemy.id || index}`
+                    });
+                    enemiesToRemove.push(index);
                 } else if (enemy.health <= 0) {
                     newState.gold += enemy.reward;
-                    newState.enemies.splice(i, 1);
+                    enemiesToRemove.push(index);
                 }
+            });
+            
+            // Fase 2: Aplicar daños usando semáforo (asíncrono)
+            if (damageOperations.length > 0) {
+                processBatchDamage(damageOperations);
             }
+            
+            // Fase 3: Remover enemigos
+            enemiesToRemove.reverse().forEach(index => {
+                newState.enemies.splice(index, 1);
+            });
             
             // Actualizar torres
             newState.towers.forEach(tower => {
@@ -792,24 +898,48 @@ const Game = () => {
             
             return newState;
         });
-    }, []);
+    }, [processBatchDamage]);
+
+    // Refs para acceder al estado actual sin crear dependencias
+    const gameStateRef = useRef(gameState);
+    const canvasSizeRef = useRef(canvasSize);
+    const cameraRef = useRef(camera);
+    
+    // Actualizar refs cuando cambien los valores
+    useEffect(() => {
+        gameStateRef.current = gameState;
+    }, [gameState]);
+    
+    useEffect(() => {
+        canvasSizeRef.current = canvasSize;
+    }, [canvasSize]);
+    
+    useEffect(() => {
+        cameraRef.current = camera;
+    }, [camera]);
 
     // Dibujar juego
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+        
+        // Obtener valores actuales de los refs
+        const currentGameState = gameStateRef.current;
+        const currentCanvasSize = canvasSizeRef.current;
+        const currentCamera = cameraRef.current;
+        
+        ctx.clearRect(0, 0, currentCanvasSize.width, currentCanvasSize.height);
         
         // Guardar el estado del contexto y aplicar transformación de cámara
         ctx.save();
-        ctx.translate(-camera.x, -camera.y);
+        ctx.translate(-currentCamera.x, -currentCamera.y);
         
         // Calcular qué parte del grid necesitamos dibujar
-        const startCol = Math.max(0, Math.floor(camera.x / FIXED_GRID.CELL_SIZE));
-        const endCol = Math.min(FIXED_GRID.COLS, Math.ceil((camera.x + canvasSize.width) / FIXED_GRID.CELL_SIZE));
-        const startRow = Math.max(0, Math.floor(camera.y / FIXED_GRID.CELL_SIZE));
-        const endRow = Math.min(FIXED_GRID.ROWS, Math.ceil((camera.y + canvasSize.height) / FIXED_GRID.CELL_SIZE));
+        const startCol = Math.max(0, Math.floor(currentCamera.x / FIXED_GRID.CELL_SIZE));
+        const endCol = Math.min(FIXED_GRID.COLS, Math.ceil((currentCamera.x + currentCanvasSize.width) / FIXED_GRID.CELL_SIZE));
+        const startRow = Math.max(0, Math.floor(currentCamera.y / FIXED_GRID.CELL_SIZE));
+        const endRow = Math.min(FIXED_GRID.ROWS, Math.ceil((currentCamera.y + currentCanvasSize.height) / FIXED_GRID.CELL_SIZE));
         
         // Dibujar fondo gris claro para todas las celdas normales
         ctx.fillStyle = '#949494';
@@ -851,16 +981,16 @@ const Game = () => {
         
         // Ya no dibujamos el camino violeta - los enemigos siguen los checkpoints numerados
         
-        // Dibujar entidades
-        gameState.towers.forEach(tower => tower.draw(ctx));
-        gameState.enemies.forEach(enemy => enemy.draw(ctx));
-        gameState.projectiles.forEach(projectile => projectile.draw(ctx));
+        // Dibujar entidades usando el estado actual
+        currentGameState.towers.forEach(tower => tower.draw(ctx));
+        currentGameState.enemies.forEach(enemy => enemy.draw(ctx));
+        currentGameState.projectiles.forEach(projectile => projectile.draw(ctx));
         
         // Dibujar indicador de piedra seleccionada
-        if (gameState.selectedStone) {
+        if (currentGameState.selectedStone) {
             ctx.strokeStyle = '#10b981'; // Verde claro
             ctx.lineWidth = 3;
-            ctx.strokeRect(gameState.selectedStone.x - 20, gameState.selectedStone.y - 20, 40, 40);
+            ctx.strokeRect(currentGameState.selectedStone.x - 20, currentGameState.selectedStone.y - 20, 40, 40);
         }
         
         // Restaurar el contexto para las etiquetas del grid
@@ -870,24 +1000,24 @@ const Game = () => {
         drawGridLabels(ctx);
         
         // Dibujar UI de juego
-        if (gameState.state === GAME_STATES.GAME_OVER) {
+        if (currentGameState.state === GAME_STATES.GAME_OVER) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            ctx.fillRect(0, 0, currentCanvasSize.width, currentCanvasSize.height);
             
             ctx.fillStyle = 'white';
             ctx.font = '48px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', canvasSize.width / 2, canvasSize.height / 2);
-        } else if (gameState.state === GAME_STATES.PAUSED) {
+            ctx.fillText('GAME OVER', currentCanvasSize.width / 2, currentCanvasSize.height / 2);
+        } else if (currentGameState.state === GAME_STATES.PAUSED) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            ctx.fillRect(0, 0, currentCanvasSize.width, currentCanvasSize.height);
             
             ctx.fillStyle = 'white';
             ctx.font = '32px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('PAUSADO', canvasSize.width / 2, canvasSize.height / 2);
+            ctx.fillText('PAUSADO', currentCanvasSize.width / 2, currentCanvasSize.height / 2);
         }
-    }, [gameState, canvasSize, camera]);
+    }, [FIXED_GRID.CELL_SIZE, FIXED_GRID.COLS, FIXED_GRID.ROWS, drawSpecialCells, drawCellNumbers, drawGridLabels]);
 
     // Game loop principal con useRef para evitar recreaciones
     const updateRef = useRef(update);
@@ -895,6 +1025,7 @@ const Game = () => {
     
     // Actualizar las referencias cuando cambien las funciones
     useEffect(() => {
+        // console.log('🔄 Update/Draw functions changed - this should happen rarely');
         updateRef.current = update;
         drawRef.current = draw;
     }, [update, draw]);
@@ -982,7 +1113,6 @@ const Game = () => {
                     }}>
                         <span role="img" aria-label="vida">❤️</span>
                         <span>{gameState.health}/100</span>
-                        {console.log(`UI rendering health: ${gameState.health}`)}
                     </div>
                     <div className="sidebar-stat" title={`Oro: ${gameState.gold}`}>
                         <span role="img" aria-label="oro">💰</span>
